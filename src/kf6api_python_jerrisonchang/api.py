@@ -1,21 +1,21 @@
 import requests
 from typing import List, Dict, Any
-import dotenv
-import os
 from bs4 import BeautifulSoup
-
-dotenv.load_dotenv()
-
-KF_URL = os.environ.get("KF6_URL")
 
 STATES = {
     'login_credential': {
-        'userName': os.environ.get("KF6_USERNAME"),
-        'password': os.environ.get("KF6_PASSWORD")
+        'userName': None,
+        'password': None
     },
+    'KF_URL': None,
     'token': None, # this will be filled automatically later
     'author_id': None,
 }
+
+def set_credentials(kf6_url, username, password):
+    STATES['KF_URL'] = kf6_url
+    STATES['login_credential']['userName'] = username
+    STATES['login_credential']['password'] = password
 
 def check_login(func):
     """
@@ -25,7 +25,7 @@ def check_login(func):
         if STATES['token']:
             return func(*args, **kwargs)
 
-        res = requests.post(f"{KF_URL}/auth/local", json = STATES["login_credential"])
+        res = requests.post(f"{STATES['KF_URL']}/auth/local", json = STATES["login_credential"])
         if res.status_code != 200:
             raise Exception("Something is not right", res)
 
@@ -44,7 +44,7 @@ def craft_header(content_type = False) -> Dict[str, str]:
 def get_my_communities() -> List[Dict[str, Any]]:
     """Get the communities current user has registered"""
     headers = craft_header()
-    res = requests.get(f"{KF_URL}/api/users/myRegistrations", headers=headers)
+    res = requests.get(f"{STATES['KF_URL']}/api/users/myRegistrations", headers=headers)
     
     # for simplicity just use this as a starting point, no need for all information for now.
     return [{
@@ -68,7 +68,7 @@ def get_contributions(community_id: str, *, filter: List[str]=None) -> List[Dict
     }
     headers = craft_header(True)
 
-    res = requests.post(f"{KF_URL}/api/contributions/{community_id}/search", headers = headers, json = body)
+    res = requests.post(f"{STATES['KF_URL']}/api/contributions/{community_id}/search", headers = headers, json = body)
     response = [{
             "_id": i["_id"],
             "_type": i["type"],
@@ -92,7 +92,7 @@ def get_views(commuitny_id: str) -> List[Dict[str, Any]]:
     """
     Get the view from a particular community
     """
-    res = requests.get(f"{KF_URL}/api/communities/{commuitny_id}/views", headers= craft_header())
+    res = requests.get(f"{STATES['KF_URL']}/api/communities/{commuitny_id}/views", headers= craft_header())
     # return res.json()
     return [{
         '_id': i['_id'],
@@ -112,7 +112,7 @@ def get_notes_from_view(community_id: str, view_id: str) -> List[str]:
             "_to.status": "active"
         },
     }
-    res = requests.post(f"{KF_URL}/api/links/{community_id}/search", headers= craft_header(), json= body)
+    res = requests.post(f"{STATES['KF_URL']}/api/links/{community_id}/search", headers= craft_header(), json= body)
     if res.json(): 
         print("VIEW TITLE:", res.json()[0]["_from"]["title"])
 
@@ -126,7 +126,7 @@ def get_word_count(content: str) -> int:
 @check_login
 def create_contribution(community_id: str, view_id: str, title: str, content: str):
     
-    res_authors = requests.get(f"{KF_URL}/api/authors/{community_id}/me", headers=craft_header())
+    res_authors = requests.get(f"{STATES['KF_URL']}/api/authors/{community_id}/me", headers=craft_header())
     STATES['author_id'] = res_authors.json()["_id"]
     contribution = {
         'communityId': community_id,
@@ -143,7 +143,7 @@ def create_contribution(community_id: str, view_id: str, title: str, content: st
         'text4search': f"( {title} ) {content} ()",
     }
     #create contribution
-    res_contri = requests.post(f"{KF_URL}/api/contributions/{community_id}", headers=craft_header(), json= contribution)
+    res_contri = requests.post(f"{STATES['KF_URL']}/api/contributions/{community_id}", headers=craft_header(), json= contribution)
     #create link to the view
     
     # get position
@@ -158,7 +158,7 @@ def create_contribution(community_id: str, view_id: str, title: str, content: st
         'type': 'contains',
         'data': position
     }
-    res_link = requests.post(f"{KF_URL}/api/links/", headers=craft_header(), json=link_obj)
+    res_link = requests.post(f"{STATES['KF_URL']}/api/links/", headers=craft_header(), json=link_obj)
 
     return
 
