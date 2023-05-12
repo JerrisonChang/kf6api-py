@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
+name = "kf6api_py"
 dependencies = [
     'requests >=2.28, <3',
     'beautifulsoup4 >=4, <5',
 ]
-name = "kf6api_python_jerrisoncs"
 version = "0.0.1"
 
 authors = [
