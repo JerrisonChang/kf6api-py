@@ -80,11 +80,11 @@ class KF6API:
         self.temp_data = responses
         print("contributions has been saved in the memory")
 
-    def get_views(self, commuitny_id: str) -> List[Dict[str, Any]]:
+    def get_views(self, community_id: str) -> List[Dict[str, Any]]:
         """
         Get the view from a particular community
         """
-        res = requests.get(f"{self.KF_URL}/api/communities/{commuitny_id}/views", headers= self._craft_header())
+        res = requests.get(f"{self.KF_URL}/api/communities/{community_id}/views", headers= self._craft_header())
         # return res.json()
         return [{
             '_id': i['_id'],
@@ -92,7 +92,7 @@ class KF6API:
             'created': i['created'],
             'modified': i['modified'],
             'type': i['type']
-        } for i in res.json() if i['status'] == 'active']
+            } for i in res.json() if i['status'] == 'active']
 
     def get_notes_from_view(self, community_id: str, view_id: str) -> List[Any]:
         if community_id != self.current_community:
