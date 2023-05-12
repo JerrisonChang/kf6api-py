@@ -73,7 +73,7 @@ class KF6API:
                 'status': i['status'],
                 'data': i['data']['body'],
                 'riseabove_view': i['data'].get('riseabove', {}).get('viewId', None),
-                'processed_text': BeautifulSoup(i['data']['body'], 'html').get_text().strip('\n').replace(u'\xa0', u' ')
+                'processed_text': BeautifulSoup(i['data']['body'], features="html.parser").get_text().strip('\n').replace(u'\xa0', u' ')
             } for i in res.json()}
        
         self.current_community = community_id
