@@ -11,6 +11,8 @@ class KF6API:
         self.KF_URL = url
         self.token = self._login()
         self.author_id = None
+        self.current_community = None
+        self.temp_data = []
 
     def _login(self) -> str:
         res = requests.post(f"{self.KF_URL}/auth/local", json = self.login_credential)
@@ -42,11 +44,15 @@ class KF6API:
             'created': i['created']
             } for i in res.json()]
 
-    def get_contributions(self, community_id: str, *, filter: List[str]=None) -> List[Dict[str, Any]]:
+    def get_contributions(self, community_id: str):
         """
         get all the notes in the specified `community_id`. If you are only interested in a subset of notes, you 
         can pass in additional parameter `filter` with the target note ids.
         """
+
+        if self.current_community == community_id: # don't need to retieve again, already in memory
+            return
+
         body = {
             "query": {
                 "type": "Note",
@@ -57,7 +63,7 @@ class KF6API:
         headers = self._craft_header(True)
 
         res = requests.post(f"{self.KF_URL}/api/contributions/{community_id}/search", headers = headers, json = body)
-        response = [{
+        responses = {i["_id"]: {
                 "_id": i["_id"],
                 "_type": i["type"],
                 "authors": i["authors"],
@@ -66,14 +72,13 @@ class KF6API:
                 "wordCount": i['wordCount'],
                 'status': i['status'],
                 'data': i['data']['body'],
+                'riseabove_view': i['data'].get('riseabove', {}).get('viewId', None),
                 'processed_text': BeautifulSoup(i['data']['body'], 'html').get_text().strip('\n').replace(u'\xa0', u' ')
-            } for i in res.json()]
-
-        if filter:
-            return [i for i in response if i["_id"] in filter]
-        else:
-            return response
-
+            } for i in res.json()}
+       
+        self.current_community = community_id
+        self.temp_data = responses
+        print("contributions has been saved in the memory")
 
     def get_views(self, commuitny_id: str) -> List[Dict[str, Any]]:
         """
@@ -89,7 +94,10 @@ class KF6API:
             'type': i['type']
         } for i in res.json() if i['status'] == 'active']
 
-    def get_notes_from_view(self, community_id: str, view_id: str) -> List[str]:
+    def get_notes_from_view(self, community_id: str, view_id: str) -> List[Any]:
+        if community_id != self.current_community:
+            self.get_contributions(community_id)
+
         body = {
             "query": {
                 "type": "contains",
@@ -102,8 +110,22 @@ class KF6API:
         if res.json(): 
             print("VIEW TITLE:", res.json()[0]["_from"]["title"])
 
+        riseaboves = []
         target_ids = [i['to'] for i in res.json()]
-        return self.get_contributions(community_id, filter= target_ids)
+        result = []
+        for i in target_ids:
+            data = self.temp_data[i]
+            result.append(data)
+            
+            riseabove_view = data['riseabove_view']
+            if riseabove_view:
+                riseaboves.append(riseabove_view)
+        
+        while riseaboves:
+            ra_view_id = riseaboves.pop(0)
+            result += self.get_notes_from_view(community_id, ra_view_id)
+
+        return result
     
     def create_contribution(self, community_id: str, view_id: str, title: str, content: str):
     
