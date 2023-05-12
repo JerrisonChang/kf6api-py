@@ -8,13 +8,13 @@ dependencies = [
     'requests >=2.28, <3',
     'beautifulsoup4 >=4, <5',
 ]
-version = "0.0.1"
+version = "0.2.0"
 
 authors = [
     { name="Jerrison Chang-Sundin", email="chunyen.cs@gmail.com"}
 ]
 
-description = "A small tools for calling APIs in Knowledge Forum"
+description = "A small tool for calling APIs in Knowledge Forum"
 
 readme = "README.md"
 requires-python = ">=3.7"
