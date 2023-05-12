@@ -2,6 +2,11 @@
 
 This is python package for calling KF6's API's, in hope to make it more friendly for learning analytic researchers.
 
+## install
+```
+pip install kf6py
+```
+
 ## usage
 ``` python
 from kf6py import KF6API
