@@ -1,1 +1,1 @@
-from api import Kf6API
+from .api import KF6API

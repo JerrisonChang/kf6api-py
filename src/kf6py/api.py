@@ -2,7 +2,7 @@ import requests
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
 
-class Kf6API:
+class KF6API:
     def __init__(self, url, username, password):
         self.login_credential = {
             'userName': username,
@@ -27,7 +27,7 @@ class Kf6API:
         
         return res
 
-    def _get_word_count(content: str) -> int:
+    def _get_word_count(self, content: str) -> int:
         return len(content.split(" ")) #TODO: this is very simple methods, should improve on
 
     def get_my_communities(self) -> List[Dict[str, Any]]:
