@@ -3,12 +3,12 @@ from typing import List, Dict, Any
 from bs4 import BeautifulSoup
 
 class KF6API:
-    def __init__(self, url, username, password):
+    def __init__(self, url: str, username: str, password: str):
         self.login_credential = {
             'userName': username,
             'password': password
         }
-        self.KF_URL = url
+        self.KF_URL = url.strip('/ ')
         self.token = self._login()
         self.author_id = None
         self.current_community = None
