@@ -12,7 +12,7 @@ class KF6API:
         self.token = self._login()
         self.author_id = None
         self.current_community = None
-        self.temp_data = []
+        self.temp_data = {} # holds contributions map in current community
 
     def _login(self) -> str:
         res = requests.post(f"{self.KF_URL}/auth/local", json = self.login_credential)
@@ -127,6 +127,32 @@ class KF6API:
 
         return result
     
+    def get_links(self, community_id: str, type: str = None, succinct: bool = True):
+        body = {
+            'query': {
+                "_from.status": "active"
+            }
+        }
+        if type:
+            assert type in ['buildson', 'contains'] # support these for now...
+            body['query']['type'] = type
+
+        res_links = requests.post(f"{self.KF_URL}/api/links/{community_id}/search", headers=self._craft_header(), json=body)
+        if succinct:
+            return [{
+                "from": i["from"],
+                "to": i["to"]
+            } for i in res_links.json()]
+        else:
+            return res_links.json()
+
+    def get_notes_from_author(self, author_id: str) -> List:
+        """get notes from a given author"""
+        assert self.current_community is not None
+        
+        return {i: j for i, j in self.temp_data.items() if author_id in j["authors"]}
+        
+
     def create_contribution(self, community_id: str, view_id: str, title: str, content: str):
     
         res_authors = requests.get(f"{self.KF_URL}/api/authors/{community_id}/me", headers= self._craft_header())
