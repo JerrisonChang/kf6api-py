@@ -114,10 +114,10 @@ class KF6API:
         target_ids = [i['to'] for i in res.json()]
         result = []
         for i in target_ids:
-            data = self.temp_data[i]
+            data = self.temp_data.setdefault(i, self.get_single_object(i))
             result.append(data)
             
-            riseabove_view = data['riseabove_view']
+            riseabove_view = data.get('riseabove_view', None) # this helps for some scheme where this doesn't exist
             if riseabove_view:
                 riseaboves.append(riseabove_view)
         
@@ -127,6 +127,10 @@ class KF6API:
 
         return result
     
+    def get_single_object(self, object_id: str):
+        response = requests.get(f"{self.KF_URL}/api/objects/{object_id}", headers=self._craft_header() ).json()
+        return response
+
     def get_links(self, community_id: str, type: str = None, succinct: bool = True):
         body = {
             'query': {
