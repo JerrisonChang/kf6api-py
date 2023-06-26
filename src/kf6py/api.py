@@ -63,22 +63,27 @@ class KF6API:
         headers = self._craft_header(True)
 
         res = requests.post(f"{self.KF_URL}/api/contributions/{community_id}/search", headers = headers, json = body)
-        responses = {i["_id"]: {
-                "_id": i["_id"],
-                "_type": i["type"],
-                "authors": i["authors"],
-                "title": i["title"],
-                "text4search": i["text4search"],
-                "wordCount": i['wordCount'],
-                'status': i['status'],
-                'data': i['data']['body'],
-                'riseabove_view': i['data'].get('riseabove', {}).get('viewId', None),
-                'processed_text': BeautifulSoup(i['data']['body'], features="html.parser").get_text().strip('\n').replace(u'\xa0', u' ')
-            } for i in res.json()}
+        responses = {i["_id"]: self._simplify_notes(i) for i in res.json()}
        
         self.current_community = community_id
         self.temp_data = responses
         print("contributions has been saved in the memory")
+
+    def _simplify_notes(self, note_obj) -> Dict[str, Any]:
+        processed_text = BeautifulSoup(note_obj['data']['body'], features="html.parser").get_text().strip('\n').replace(u'\xa0', u' ')
+        return {
+            "_id": note_obj["_id"],
+            "_type": note_obj["type"],
+            "authors": note_obj["authors"],
+            "title": note_obj["title"],
+            "text4search": note_obj["text4search"],
+            "wordCount": note_obj.get('wordCount', self._get_word_count(processed_text)),
+            'status': note_obj['status'],
+            'created': note_obj['created'],
+            'data': note_obj['data']['body'],
+            'riseabove_view': note_obj['data'].get('riseabove', {}).get('viewId', None),
+            'processed_text': processed_text
+        }
 
     def get_views(self, community_id: str) -> List[Dict[str, Any]]:
         """
@@ -114,7 +119,7 @@ class KF6API:
         target_ids = [i['to'] for i in res.json()]
         result = []
         for i in target_ids:
-            data = self.temp_data.setdefault(i, self.get_single_object(i))
+            data = self.temp_data.setdefault(i, self._simplify_notes(self.get_single_object(i)))
             result.append(data)
             
             riseabove_view = data.get('riseabove_view', None) # this helps for some scheme where this doesn't exist
