@@ -155,7 +155,7 @@ class KF6API:
         else:
             return res_links.json()
 
-    def get_notes_from_author(self, author_id: str) -> List:
+    def get_notes_from_author(self, author_id: str) -> Dict:
         """get notes from a given author"""
         assert self.current_community is not None
 
