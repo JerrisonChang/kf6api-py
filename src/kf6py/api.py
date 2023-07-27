@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 
 class KF6API:
@@ -136,7 +136,7 @@ class KF6API:
         response = requests.get(f"{self.KF_URL}/api/objects/{object_id}", headers=self._craft_header() ).json()
         return response
 
-    def get_links(self, community_id: str, type: str = None, succinct: bool = True):
+    def get_links(self, community_id: str, type: Optional[str] = None, succinct: bool = True):
         body = {
             'query': {
                 "_from.status": "active"
@@ -182,7 +182,6 @@ class KF6API:
         }
         #create contribution
         res_contri = requests.post(f"{self.KF_URL}/api/contributions/{community_id}", headers= self._craft_header(), json= contribution)
-        #create link to the view
 
         # get position
         position = { #TODO: move to last
@@ -191,7 +190,7 @@ class KF6API:
         }
 
         link_obj = {
-            'from': view_id,
+            'from': view_id, # create link to view
             'to': res_contri.json()['_id'],
             'type': 'contains',
             'data': position
