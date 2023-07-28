@@ -1,5 +1,5 @@
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 
 class KF6API:
@@ -20,13 +20,13 @@ class KF6API:
             raise Exception("Something is not right", res)
 
         return res.json()['token']
-        
+
     def _craft_header(self, content_type = False) -> Dict[str, str]:
         res = {"Authorization": f"Bearer {self.token}"}
-        
+
         if content_type:
             res['Content-Type'] = 'application/json'
-        
+
         return res
 
     def _get_word_count(self, content: str) -> int:
@@ -36,7 +36,7 @@ class KF6API:
         """Get the communities current user has registered"""
         headers = self._craft_header()
         res = requests.get(f"{self.KF_URL}/api/users/myRegistrations", headers=headers)
-        
+
         # for simplicity just use this as a starting point, no need for all information for now.
         return [{
             'id': i['communityId'], 
@@ -64,7 +64,7 @@ class KF6API:
 
         res = requests.post(f"{self.KF_URL}/api/contributions/{community_id}/search", headers = headers, json = body)
         responses = {i["_id"]: self._simplify_notes(i) for i in res.json()}
-       
+
         self.current_community = community_id
         self.temp_data = responses
         print("contributions has been saved in the memory")
@@ -121,22 +121,22 @@ class KF6API:
         for i in target_ids:
             data = self.temp_data.setdefault(i, self._simplify_notes(self.get_single_object(i)))
             result.append(data)
-            
+
             riseabove_view = data.get('riseabove_view', None) # this helps for some scheme where this doesn't exist
             if riseabove_view:
                 riseaboves.append(riseabove_view)
-        
+
         while riseaboves:
             ra_view_id = riseaboves.pop(0)
             result += self.get_notes_from_view(community_id, ra_view_id)
 
         return result
-    
+
     def get_single_object(self, object_id: str):
         response = requests.get(f"{self.KF_URL}/api/objects/{object_id}", headers=self._craft_header() ).json()
         return response
 
-    def get_links(self, community_id: str, type: str = None, succinct: bool = True):
+    def get_links(self, community_id: str, type: Optional[str] = None, succinct: bool = True):
         body = {
             'query': {
                 "_from.status": "active"
@@ -155,15 +155,15 @@ class KF6API:
         else:
             return res_links.json()
 
-    def get_notes_from_author(self, author_id: str) -> List:
+    def get_notes_from_author(self, author_id: str) -> Dict:
         """get notes from a given author"""
         assert self.current_community is not None
-        
+
         return {i: j for i, j in self.temp_data.items() if author_id in j["authors"]}
-        
+
 
     def create_contribution(self, community_id: str, view_id: str, title: str, content: str):
-    
+
         res_authors = requests.get(f"{self.KF_URL}/api/authors/{community_id}/me", headers= self._craft_header())
         self.author_id = res_authors.json()["_id"]
         contribution = {
@@ -182,8 +182,7 @@ class KF6API:
         }
         #create contribution
         res_contri = requests.post(f"{self.KF_URL}/api/contributions/{community_id}", headers= self._craft_header(), json= contribution)
-        #create link to the view
-        
+
         # get position
         position = { #TODO: move to last
             'x': 10,
@@ -191,7 +190,7 @@ class KF6API:
         }
 
         link_obj = {
-            'from': view_id,
+            'from': view_id, # create link to view
             'to': res_contri.json()['_id'],
             'type': 'contains',
             'data': position
